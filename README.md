@@ -9,7 +9,7 @@ Data quality control,
 SCE breakpoint analysis,
 CNV and aneuloidy detection,
 Inversion profiling,
-Prediction of recombinantion hotspots,
+Prediction of recombination hotspots,
 Haplotype assembly
 
-This R-package is currently under the development!!!
+This R-package is currently under development!!!
