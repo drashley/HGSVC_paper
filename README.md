@@ -13,5 +13,3 @@ Prediction of recombination hotspots,
 Haplotype assembly
 
 This R-package is currently under development!!!
-
-![alt tag](https://github.com/daewoooo/SingleCellToolkit/issue/1)
