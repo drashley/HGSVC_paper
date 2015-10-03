@@ -1,1 +1,8 @@
-Next Meeting: 1.10.2015 17:30CET skype meeting
+Ashley will add code of the breakpoin.R - especially part downstream from the initial bam file binning
+Plus add inversion calling function
+
+David will add CNV breakpoint caller as a complement to aneufinder
+
+Aaron will be packaging available code
+
+First stage: create Brekpoint.R package
