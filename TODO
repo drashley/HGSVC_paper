@@ -1,3 +1,5 @@
+Outsource the BED export functionality from Run_breakpoint.R into a separate function.
+
 Ashley will add code of the breakpoin.R - especially part downstream from the initial bam file binning
 Plus add inversion calling function
 
