@@ -2,13 +2,17 @@
 #'
 #' Import aligned reads from a BAM file into a \code{\link{GRanges}} object.
 #'
+#' @param file Bamfile with aligned reads.
+#' @param bamindex Bam-index file with or without the .bai ending. If this file does not exist it will be created and a warning is issued.
+#' @param chromosomes If only a subset of the chromosomes should be binned, specify them here.
 #' @param pairedEndReads Set to \code{TRUE} if you have paired-end reads in your file.
+#' @param min.mapq Minimum mapping quality when importing from BAM files.
 #' @param keep.duplicate.reads A logical indicating whether or not duplicate reads should be kept.
 #' @importFrom Rsamtools indexBam scanBamHeader ScanBamParam scanBamFlag
 #' @importFrom GenomicAlignments readGAlignmentPairsFromBam readGAlignmentsFromBam first
 #' @author Aaron Taudt
 #' @export
-bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FALSE, keep.duplicate.reads=TRUE) {
+bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FALSE, min.mapq=10, keep.duplicate.reads=TRUE) {
 
 	## Check if bamindex exists
 	bamindex.raw <- sub('\\.bai$', '', bamindex)
@@ -57,6 +61,14 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 		data <- sort(c(data.first, data.last))
 	} else {
 		data <- as(data.raw, 'GRanges')
+	}
+	## Filter by mapping quality
+	if (!is.null(min.mapq)) {
+		if (any(is.na(mcols(data)$mapq))) {
+			warning(paste0(file,": Reads with mapping quality NA (=255 in BAM file) found and removed. Set 'min.mapq=NULL' to keep all reads."))
+			mcols(data)$mapq[is.na(mcols(data)$mapq)] <- -1
+		}
+		data <- data[mcols(data)$mapq >= min.mapq]
 	}
 	return(data)
 

@@ -5,10 +5,18 @@
 \title{Import BAM file into GRanges}
 \usage{
 bam2GRanges(file, bamindex = file, chromosomes = NULL,
-  pairedEndReads = FALSE, keep.duplicate.reads = TRUE)
+  pairedEndReads = FALSE, min.mapq = 10, keep.duplicate.reads = TRUE)
 }
 \arguments{
+\item{file}{Bamfile with aligned reads.}
+
+\item{bamindex}{Bam-index file with or without the .bai ending. If this file does not exist it will be created and a warning is issued.}
+
+\item{chromosomes}{If only a subset of the chromosomes should be binned, specify them here.}
+
 \item{pairedEndReads}{Set to \code{TRUE} if you have paired-end reads in your file.}
+
+\item{min.mapq}{Minimum mapping quality when importing from BAM files.}
 
 \item{keep.duplicate.reads}{A logical indicating whether or not duplicate reads should be kept.}
 }

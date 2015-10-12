@@ -5,6 +5,7 @@
 #' @param frags A \code{\link{GRanges}} with read fragments (see \code{\link{bam2GRanges}}).
 #' @param reads.per.window Number of reads in each dynamic window.
 #' @import GenomicRanges
+#' @importFrom BiocGenerics as.vector
 #' @author Aaron Taudt
 #' @export
 deltaWCalculator <- function(frags, reads.per.window=10) {
@@ -21,39 +22,19 @@ deltaWCalculator <- function(frags, reads.per.window=10) {
 	for (chrom in chroms2parse) {
 		f <- frags.split[[chrom]]
 		f <- f[order(start(f))]
-		f$pcsum <- NA
-		f$mcsum <- NA
-		f$preads <- NA
-		f$mreads <- NA
-		for (i1 in 1:reads.per.window) {
-			## Get index of window positions
-			windex <- seq(from=i1, by=reads.per.window, to=length(f))
-			## Make plus and minus strand cumulative sum
-			f$pcsum <- cumsum(strand(f)=='+')
-			f$mcsum <- cumsum(strand(f)=='-')
-			if (i1>1) {
-				f$preads[windex] <- diff(as.numeric(f$pcsum[c(1,windex)]))
-				f$mreads[windex] <- diff(as.numeric(f$mcsum[c(1,windex)]))
-			} else {
-				f$preads[windex] <- c(0,diff(as.numeric(f$pcsum[c(windex)])))
-				f$mreads[windex] <- c(0,diff(as.numeric(f$mcsum[c(windex)])))
-			}
-		}
-		## Right - left window with padding of the ends
-		pfill <- (f$preads[length(f)]:0)[1:reads.per.window]
-		pfill[is.na(pfill)] <- 0
-		mfill <- (f$mreads[length(f)]:0)[1:reads.per.window]
-		mfill[is.na(mfill)] <- 0
-		f$pdelta <- abs(c(f$preads[-c(1:reads.per.window)],pfill) - f$preads)
-		f$mdelta <- abs(c(f$mreads[-c(1:reads.per.window)],mfill) - f$mreads)
-
-		## Minus and plus merged
-		f$deltaW <- pmin(f$pdelta,f$mdelta)
-
+		f$pcsum <- cumsum(strand(f)=='+')
+		f$mcsum <- cumsum(strand(f)=='-')
+		f$preads <- c(rep(NA,reads.per.window),diff(BiocGenerics::as.vector(f$pcsum),lag=reads.per.window))
+		f$mreads <- c(rep(NA,reads.per.window),diff(BiocGenerics::as.vector(f$mcsum),lag=reads.per.window))
+		f$deltaW <- abs(c(diff(f$preads,lag=reads.per.window),rep(NA,reads.per.window)))
 		frags.new[[chrom]] <- f
 	}
 	frags.new <- unlist(frags.new)
 	names(frags.new) <- NULL
+	# Replace NAs with 0 to avoid problems in downstream functions
+	frags.new$deltaW[is.na(frags.new$deltaW)] <- 0
+	frags.new$mreads[is.na(frags.new$mreads)] <- 0
+	frags.new$preads[is.na(frags.new$preads)] <- 0
 
 	return(frags.new)
 
