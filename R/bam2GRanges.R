@@ -70,6 +70,7 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 		}
 		data <- data[mcols(data)$mapq >= min.mapq]
 	}
+	seqlevels(data) <- seqlevels(gr)
 	return(data)
 
 }
