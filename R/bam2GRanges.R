@@ -43,15 +43,15 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 	gr <- GenomicRanges::GRanges(seqnames=Rle(chroms2use), ranges=IRanges(start=rep(1, length(chroms2use)), end=chrom.lengths[chroms2use]))
 	if (keep.duplicate.reads) {
 		if (pairedEndReads) {
-			data.raw <- GenomicAlignments::readGAlignmentPairsFromBam(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
+			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
 		} else {
-			data.raw <- GenomicAlignments::readGAlignmentsFromBam(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
+			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
 		}
 	} else {
 		if (pairedEndReads) {
-			data.raw <- GenomicAlignments::readGAlignmentPairsFromBam(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
+			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
 		} else {
-			data.raw <- GenomicAlignments::readGAlignmentsFromBam(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
+			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
 		}
 	}
 	if (pairedEndReads) {
