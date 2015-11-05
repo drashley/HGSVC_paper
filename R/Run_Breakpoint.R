@@ -23,27 +23,35 @@
 #' @param depthTable If \code{TRUE}, will generate a table that also contains reads/Mb between breaks (important for SCE calls).
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
-runBreakpointr <- function(bamfile, dataDirectory='./BreakPointR_analysis/', pairedEndReads=FALSE, chromosomes=NULL, windowsize=100, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
+
+runBreakpointr <- function(bamfile, dataDirectory='./BreakPointR_analysis/', pairedEndReads=FALSE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
 
 	fileDestination <- dataDirectory
 	if (!file.exists(dataDirectory)) {
 		dir.create(dataDirectory)
 	}
 
+	SummaryfileDestination <- file.path(dataDirectory, 'Summary_files/')
+	if (!file.exists(SummaryfileDestination)) {
+		dir.create(SummaryfileDestination)
+	}
+
 	fragments <- bam2GRanges(bamfile, pairedEndReads=pairedEndReads, chromosomes=chromosomes, keep.duplicate.reads=FALSE)
-	if (windowsize!='scale') {
+	if (scaleWindowSize==F) {
 		reads.per.window <- windowsize
 		message("Calculating deltaWs")
 		dw <- deltaWCalculator(fragments, reads.per.window=reads.per.window)
 	}
 	
+	deltas.all.chroms <- GenomicRanges::GRangesList()
+	breaks.all.chroms <- GenomicRanges::GRangesList()
 	for (chr in unique(seqnames(fragments))) {
 
 		message("Working on chromosome ",chr)
 
 		message("Calculating deltaWs")
-		if (windowsize=='scale'){
-			reads.per.window <- round(100/(seqlengths(fragments)[1]/seqlengths(fragments)[chr])) # scales the bin to chr size, anchored to chr1 (249250621 bp)
+		if (scaleWindowSize==T){
+			reads.per.window <- round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr])) # scales the bin to chr size, anchored to chr1 (249250621 bp)
 			dw <- suppressWarnings( deltaWCalculator(fragments[seqnames(fragments)==chr], reads.per.window=reads.per.window) )
 		}
 		deltaWs <- dw[seqnames(dw)==chr]
@@ -57,6 +65,12 @@ runBreakpointr <- function(bamfile, dataDirectory='./BreakPointR_analysis/', pai
 			newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
 		} else {
 			newBreaks<-NULL # assigns something to newBreaks if no peaks found
+		}
+
+		### write breaks and deltas into GRanges
+		suppressWarnings( deltas.all.chroms[[chr]] <- deltaWs )
+		if (length(newBreaks)) {
+			suppressWarnings( breaks.all.chroms[[chr]] <- newBreaks )
 		}
 		
 		### Write to BED ###
@@ -112,19 +126,20 @@ runBreakpointr <- function(bamfile, dataDirectory='./BreakPointR_analysis/', pai
 
 		}
 		
-		### Write an INDEX file of delatWs and breaks for ALL CHR
+		### Write an INDEX file of deltaWs and breaks for ALL CHR
 		if( chr== 'chr1'){ # write header
 			head_reads<- paste('track name=', basename(bamfile), '_reads visibility=1 colorByStrand="103,139,139 243,165,97"', sep="")
-			write.table(head_reads, file=paste(fileDestination, basename(bamfile), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
+			write.table(head_reads, file=paste(SummaryfileDestination, basename(bamfile), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
 			head_dW<- paste('track type=bedGraph name=', basename(bamfile),'_dWs description=BedGraph_of_deltaWs_',basename(bamfile), '_allChr visibility=full color=200,100,10', sep="")
-			write.table(head_dW, file=paste(fileDestination, basename(bamfile), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
+			write.table(head_dW, file=paste(SummaryfileDestination, basename(bamfile), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
 			head_br<- paste('track name=', basename(bamfile), '_BPs description=BedGraph_of_breakpoints_',basename(bamfile),'_allChr visibility=dense color=75,125,180', sep="")
-			write.table(head_br,  file=paste(fileDestination, basename(bamfile), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')
+			write.table(head_br,  file=paste(SummaryfileDestination, basename(bamfile), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')
 		} # write data
-		write.table(bedfile,file=paste(fileDestination, basename(bamfile), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')   
-		write.table(bedG, file=paste(fileDestination, basename(bamfile), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
-		write.table(bpG, file=paste(fileDestination, basename(bamfile), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
+		write.table(bedfile,file=paste(SummaryfileDestination, basename(bamfile), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')   
+		write.table(bedG, file=paste(SummaryfileDestination, basename(bamfile), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
+		write.table(bpG, file=paste(SummaryfileDestination, basename(bamfile), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
 		
 	}
+	return(list(deltas=deltas.all.chroms, breaks=breaks.all.chroms))
 }
 
