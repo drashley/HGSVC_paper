@@ -6,8 +6,8 @@
 \usage{
 runBreakpointr(bamfile, dataDirectory = "./BreakPointR_analysis/",
   pairedEndReads = FALSE, chromosomes = NULL, windowsize = 100,
-  trim = 10, peakTh = 0.33, zlim = 3.291, bg = 0.02, minReads = 10,
-  writeBed = T, verbose = T, depthTable = T)
+  scaleWindowSize = T, trim = 10, peakTh = 0.33, zlim = 3.291,
+  bg = 0.02, minReads = 10, writeBed = T, verbose = T, depthTable = T)
 }
 \arguments{
 \item{bamfile}{A file with aligned reads in BAM format.}

@@ -28,7 +28,6 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 
 	files <- list.files(datapath, pattern=".bam$", full=T)
 
-	fileDestination <- dataDirectory
 	if (!file.exists(dataDirectory)) {
 		dir.create(dataDirectory)
 	}
@@ -38,7 +37,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 	for (bamfile in files) {
 		message("Working on file ",bamfile)
 		
-		deltas.breaks.obj <- runBreakpointr(bamfile=bamfile, dataDirectory=file.path(datapath, dataDirectory, bamfile), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+		deltas.breaks.obj <- runBreakpointr(bamfile=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
 
 		deltas <- unlist(deltas.breaks.obj$deltas)
 		breaks <- unlist(deltas.breaks.obj$breaks)
