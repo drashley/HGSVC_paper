@@ -24,7 +24,7 @@
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis', pairedEndReads=FALSE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
+runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis', pairedEndReads=FALSE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T, createCompositeFile=F) {
 
 	files <- list.files(datapath, pattern=".bam$", full=T)
 
@@ -34,19 +34,51 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 
 	deltas.all.files <- GenomicRanges::GRangesList()
 	breaks.all.files <- GenomicRanges::GRangesList()
-	for (bamfile in files) {
-		message("Working on file ",bamfile)
-		
-		deltas.breaks.obj <- runBreakpointr(bamfile=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+	counts.all.files <- GenomicRanges::GRangesList()
 
-		deltas <- unlist(deltas.breaks.obj$deltas)
-		breaks <- unlist(deltas.breaks.obj$breaks)
+	if (createCompositeFile) {
+		fragments <- createCompositeFile(datapath=datapath, chromosomes=chromosomes, pairedEndReads=pairedEndReads) 
 
-		suppressWarnings( deltas.all.files[[bamfile]] <- deltas )
+		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=file.path(dataDirectory, 'CompositeFile'), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+
+		deltas <- unlist(deltas.breaks.counts.obj$deltas)
+		breaks <- unlist(deltas.breaks.counts.obj$breaks)
+		counts <- unlist(deltas.breaks.counts.obj$counts)
+
+		names(deltas) <- NULL
+		names(breaks) <- NULL
+		names(counts) <- NULL
+
+		suppressWarnings( deltas.all.files[['CompositeFile']] <- deltas )
+		suppressWarnings( counts.all.files[['CompositeFile']] <- counts )
+
 		if (length(breaks)) {
-			suppressWarnings( breaks.all.files[[bamfile]] <- breaks )
+			suppressWarnings( breaks.all.files[['CompositeFile']] <- breaks )
+		}
+	
+	} else {
+
+		for (bamfile in files) {
+			message("Working on file ",bamfile)
+		
+			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+
+			deltas <- unlist(deltas.breaks.counts.obj$deltas)
+			breaks <- unlist(deltas.breaks.counts.obj$breaks)
+			counts <- unlist(deltas.breaks.counts.obj$counts)
+
+			names(deltas) <- NULL
+			names(breaks) <- NULL
+			names(counts) <- NULL
+
+			suppressWarnings( deltas.all.files[[bamfile]] <- deltas )
+			suppressWarnings( counts.all.files[[bamfile]] <- counts )
+			
+			if (length(breaks)) {
+				suppressWarnings( breaks.all.files[[bamfile]] <- breaks )
+			}
 		}
 	}
-	return(list(deltas=deltas.all.files, breaks=breaks.all.files)) 
+	return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files)) 
 }
 

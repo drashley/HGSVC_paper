@@ -77,6 +77,10 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 	end(breakrange.new) <- start(breakrange[which(!equal.on.either.side)+1])
 	breakrange.new$genoT <- paste(breakrange$genoT[!equal.on.either.side], breakrange$genoT[which(!equal.on.either.side)+1], sep='-')
 
-  return(breakrange.new)
-
+  if (length(breakrange.new)) {	
+  	return(breakrange.new)
+  } else {
+	return(breakrange.new<-NULL)
+  }	
+	
 }
