@@ -60,13 +60,23 @@ plotBreakpoints <- function(data, file=NULL) {
 
 		## Scaling size of the rectangle to amout of reads in a given region
 		scale <- (dfplot.counts[,c('Ws','Cs')] / dfplot.counts$width) * 1000000
+	
+		## filter regions small regions => hard to see on the plot
+		outlier.W <- round(max(stats::runmed(scale$Ws, 3)))
+		outlier.C <- round(max(stats::runmed(scale$Cs, 3)))
+
+		set.max.W <- round(max(scale$Ws[scale$Ws < outlier.W]))
+		set.max.C <- round(max(scale$Cs[scale$Cs < outlier.C]))	
+
+		scale$Ws[scale$Ws > outlier.W] <- set.max.W
+		scale$Cs[scale$Cs > outlier.C] <- set.max.C
+		
+		## putting scaled and filtered regions into a data frame
 		names(scale) <- c('W.scaled', 'C.scaled')
 		df.W <- cbind(dfplot.counts, scaled=scale$W.scaled, fill.strand=rep('W', length(scale$W.scaled)) )
 		df.C <- cbind(dfplot.counts, scaled=-scale$C.scaled, fill.strand=rep('C', length(scale$W.scaled)) )
 		dfplot.counts <- rbind(df.W, df.C)
 
-		#filter regions small regions => hard to see on the plot
-		dfplot.counts <- dfplot.counts[dfplot.counts$width > 50000,]
 	
 		## make altering colors for every chromosome
 		chr.num <- length(levels(dfplot.deltas$seqnames))
