@@ -54,7 +54,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	
 	deltas.all.chroms <- GenomicRanges::GRangesList()
 	breaks.all.chroms <- GenomicRanges::GRangesList()
-	Counts.all.chroms <- GenomicRanges::GRangesList()
+	counts.all.chroms <- GenomicRanges::GRangesList()
 	for (chr in unique(seqnames(fragments))) {
 
 		message("Working on chromosome ",chr)
@@ -107,7 +107,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			}					
 
 			chrRange$states <- state
-			suppressWarnings( Counts.all.chroms[[chr]] <- chrRange )
+			suppressWarnings( counts.all.chroms[[chr]] <- chrRange )
 	
 		} else {
 			
@@ -133,7 +133,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			counts <- cbind(Ws,Cs)
 			mcols(breakrange) <- counts
 			breakrange$states <- states
-			suppressWarnings( Counts.all.chroms[[chr]] <- breakrange )
+			suppressWarnings( counts.all.chroms[[chr]] <- breakrange )
 		}
 
 		### write breaks and deltas into GRanges
@@ -212,16 +212,16 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	## creating list of list where filename is first level list ID and deltas, breaks and counts are second list IDs
 	deltas.all.chroms <- unlist(deltas.all.chroms)
 	breaks.all.chroms <- unlist(breaks.all.chroms)
-	Counts.all.chroms <- unlist(readCounts.all.chroms)
+	counts.all.chroms <- unlist(counts.all.chroms)
 	names(deltas.all.chroms) <- NULL
 	names(breaks.all.chroms) <- NULL
-	names(Counts.all.chroms) <- NULL
+	names(counts.all.chroms) <- NULL
 	deltas.list <- GenomicRanges::GRangesList()
 	breaks.list <- GenomicRanges::GRangesList()
 	Counts.list <- GenomicRanges::GRangesList()
 	deltas.list[[filename]] <- deltas.all.chroms
 	breaks.list[[filename]] <- breaks.all.chroms
-	Counts.list[[filename]] <- Counts.all.chroms
+	Counts.list[[filename]] <- counts.all.chroms
 	return(list(deltas=deltas.list, breaks=breaks.list, counts=Counts.list))
 }
 
