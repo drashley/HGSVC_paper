@@ -101,7 +101,7 @@ plotBreakpoints <- function(data, file=NULL) {
 		)
 
 		## plotting data	
-		ggplt1 <- ggplot(dfplot.deltas) + geom_linerange(aes_string(ymin=0, ymax='deltaW', x='start.genome', color='seqnames'), size=0.2) + scale_color_manual(values=chr.colors, guide='none')
+		ggplt1 <- ggplot(dfplot.deltas) + geom_line(aes_string(y='deltaW', x='start.genome', color='seqnames'), size=0.2) + scale_color_manual(values=chr.colors, guide='none')
 		ggplt1 <- ggplt1 + geom_rect(data=dfplot.breaks, aes_string(xmin='start.genome', xmax='end.genome', ymin=0, ymax='Inf'), fill='red', color='red', alpha=0.3, inherit.aes = FALSE)  + xlab(NULL) + ylab("DeltaW") + ggtitle(filename) + scale_x_continuous(expand = c(0,0)) + theme(axis.text.x=element_blank(), axis.ticks.x=element_blank()) + my_theme
 
 		ggplt2 <- ggplot(dfplot.counts) + geom_rect(aes_string(xmin='start.genome', xmax='end.genome', ymin=0, ymax='scaled', fill='fill.strand')) + scale_fill_manual(values=c("sandybrown","paleturquoise4"))
