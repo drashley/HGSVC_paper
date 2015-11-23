@@ -8,10 +8,16 @@
 #' @author David Porubsky
 #' @export
 
-plotBreakpoints <- function(data, file=NULL) {
+plotBreakpoints <- function(data, plotLibraries = NULL, file=NULL) {
+
+	if (!is.null(plotLibraries)) {
+		libs2plot <- plotLibraries
+	} else {
+		libs2plot <- c(1:length(data$deltas))
+	}
 
 	plots <- list()
-	for (i in 1:length(data$deltas)) {
+	for (i in libs2plot) {
 		files <- names(data$deltas)
 		filename <- basename(files[i])
 
@@ -20,7 +26,12 @@ plotBreakpoints <- function(data, file=NULL) {
 		deltas <- data$deltas[[i]]
 		breaks <- data$breaks[[i]]
 		counts <- data$counts[[i]]
+		params <- data$params
 
+		## Calculate used threshold
+		#zlim <- params['zlim']
+
+		## Transform coordinates from "chr, start, end" to "genome.start, genome.end
 		cum.seqlengths <- cumsum(as.numeric(seqlengths(deltas)))
 		cum.seqlengths.0 <- c(0,cum.seqlengths[-length(cum.seqlengths)])
 		names(cum.seqlengths.0) <- seqlevels(deltas)
@@ -28,7 +39,6 @@ plotBreakpoints <- function(data, file=NULL) {
 		chr.lines <- data.frame( y=cum.seqlengths[-length(cum.seqlengths)] )
 		chr.label.pos <- round( cum.seqlengths.0 + (0.5 * seqlengths(deltas) ) )
 
-		## Transform coordinates from "chr, start, end" to "genome.start, genome.end
 		transCoord <- function(gr) {
 			gr$start.genome <- start(gr) + cum.seqlengths.0[as.character(seqnames(gr))]
 			gr$end.genome <- end(gr) + cum.seqlengths.0[as.character(seqnames(gr))]

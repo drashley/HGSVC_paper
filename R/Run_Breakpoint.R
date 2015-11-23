@@ -154,8 +154,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		if (depthTable==T && !is.null(newBreaks) && length(newBreaks)>0) # write a table with the depth information for everything between the breaks
 		{
 			message("Writing depthTable")
-			outputFile<- GenotypeBreaks(newBreaks, fragments, backG=bg, minReads=minReads)
-			outputFile <- insertchr(outputFile)
+			outputFile <- insertchr(newBreaks)
 			depths <- round(outputFile$readNo / (end(outputFile)-start(outputFile))*1000000, digits=2)      
 			depthT<- cbind(as.data.frame(outputFile), depths) # depths = chr, start, end, readNo, Ws, Cs, genoT, pVal
 			if( chr == 'chr1'){ # write column names
@@ -218,10 +217,14 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	names(counts.all.chroms) <- NULL
 	deltas.list <- GenomicRanges::GRangesList()
 	breaks.list <- GenomicRanges::GRangesList()
-	Counts.list <- GenomicRanges::GRangesList()
+	counts.list <- GenomicRanges::GRangesList()
 	deltas.list[[filename]] <- deltas.all.chroms
 	breaks.list[[filename]] <- breaks.all.chroms
-	Counts.list[[filename]] <- counts.all.chroms
-	return(list(deltas=deltas.list, breaks=breaks.list, counts=Counts.list))
+	counts.list[[filename]] <- counts.all.chroms
+	
+	## save set parameters for future reference
+	parameters <- c(windowsize=windowsize, scaleWindowSize=scaleWindowSize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads)
+
+	return(list(deltas=deltas.list, breaks=breaks.list, counts=counts.list, params=parameters))
 }
 
