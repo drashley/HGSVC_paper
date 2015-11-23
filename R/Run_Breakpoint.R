@@ -96,11 +96,11 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 
 			## genotype entire chromosome
 			WC.ratio <- (chrRange$Ws-chrRange$Cs)/sum(c(chrRange$Ws,chrRange$Cs))
-			if (WC.ratio > 0.9) {
+			if (WC.ratio > 0.8) {
 				state <- 'ww'
-			} else if (WC.ratio < -0.9) {
+			} else if (WC.ratio < -0.8) {
 				state <- 'cc'
-			} else if (WC.ratio < 0.1 & WC.ratio > -0.1) {
+			} else if (WC.ratio < 0.2 & WC.ratio > -0.2) {
 				state <- 'wc'
 			} else {
 				state <- '?'
