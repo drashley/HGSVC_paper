@@ -37,7 +37,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 	counts.all.files <- GenomicRanges::GRangesList()
 
 	if (createCompositeFile) {
-		fragments <- createCompositeFile(files, chromosomes=chromosomes, pairedEndReads=pairedEndReads) 
+		fragments <- createCompositeFile(file.list=files, chromosomes=chromosomes, pairedEndReads=pairedEndReads) 
 
 		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=file.path(dataDirectory, 'CompositeFile'), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
 
