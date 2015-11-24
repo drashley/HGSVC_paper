@@ -62,13 +62,14 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		message("Calculating deltaWs")
 		if (scaleWindowSize==T){
 			## normalize only for size of the chromosome 1
-			#reads.per.window <- round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr])) # scales the bin to chr size, anchored to chr1 (249250621 bp) 
+			reads.per.window <- round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr])) # scales the bin to chr size, anchored to chr1 (249250621 bp) 
+			dw <- suppressWarnings( deltaWCalculator(fragments[seqnames(fragments)==chr], reads.per.window=reads.per.window) )
 			
 			## normalize for size of chromosome one and for read counts of each chromosome
-			num.reads <- length( fragments[seqnames(fragments)==chr] )
-			reads.per.window <- round( num.reads/( windowsize*(seqlengths(fragments)[chr]/seqlengths(fragments)[1]) ) )
-			reads.per.window <- round(reads.per.window/2)
-			dw <- suppressWarnings( deltaWCalculator(fragments[seqnames(fragments)==chr], reads.per.window=reads.per.window) )
+			#num.reads <- length( fragments[seqnames(fragments)==chr] )
+			#reads.per.window <- round( num.reads/( windowsize*(seqlengths(fragments)[chr]/seqlengths(fragments)[1]) ) )
+			#reads.per.window <- round(reads.per.window/2)
+			#dw <- suppressWarnings( deltaWCalculator(fragments[seqnames(fragments)==chr], reads.per.window=reads.per.window) )
 		}
 		deltaWs <- dw[seqnames(dw)==chr]
 
