@@ -138,7 +138,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		}
 
 		### write breaks and deltas into GRanges
-		suppressWarnings( deltas.all.chroms[[chr]] <- deltaWs )
+		suppressWarnings( deltas.all.chroms[[chr]] <- deltaWs[,'deltaW'] )  #select only deltaW metadata column to store
 		if (length(newBreaks)) {
 			suppressWarnings( breaks.all.chroms[[chr]] <- newBreaks )
 		}

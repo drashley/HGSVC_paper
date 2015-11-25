@@ -4,13 +4,10 @@
 \alias{createCompositeFile}
 \title{Function to create composite Strand-seq file}
 \usage{
-createCompositeFile(datapath = NULL, chromosomes = NULL,
-  pairedEndReads = FALSE, min.mapq = 10, keep.duplicate.reads = FALSE,
-  WC.cutoff = 0.9)
+createCompositeFile(file.list, chromosomes = NULL, pairedEndReads = FALSE,
+  min.mapq = 10, keep.duplicate.reads = FALSE, WC.cutoff = 0.9)
 }
 \arguments{
-\item{datapath}{Location where bam files to be processed are stored}
-
 \item{chromosomes}{If only a subset of the chromosomes should be binned, specify them here.}
 
 \item{pairedEndReads}{Set to \code{TRUE} if you have paired-end reads in your file.}
@@ -20,6 +17,8 @@ createCompositeFile(datapath = NULL, chromosomes = NULL,
 \item{keep.duplicate.reads}{A logical indicating whether or not duplicate reads should be kept.}
 
 \item{WC.cutoff}{Percentage of WW or CC reads to consider chromosome being WW or CC}
+
+\item{datapath}{Location where bam files to be processed are stored}
 }
 \description{
 This script will move through .bam files in a folder

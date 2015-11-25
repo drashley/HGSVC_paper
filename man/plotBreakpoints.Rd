@@ -4,7 +4,7 @@
 \alias{plotBreakpoints}
 \title{Plotting function for BreakPointR}
 \usage{
-plotBreakpoints(data, file = NULL)
+plotBreakpoints(data, plotLibraries = NULL, file = NULL)
 }
 \arguments{
 \item{output}{genomic ranges from the function runBreakpointr or runBreakpointrALL}

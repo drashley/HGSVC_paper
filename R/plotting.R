@@ -4,7 +4,7 @@
 
 #' @import ggplot2
 #' @import grid
-#' @import cowplot
+#' @importFrom cowplot plot_grid
 #' @author David Porubsky
 #' @export
 
@@ -123,7 +123,7 @@ plotBreakpoints <- function(data, plotLibraries = NULL, file=NULL) {
 
 		## storing plot for each file in a list
 		#theme_set(theme_cowplot(axis.text.x=element_blank(), axis.ticks.x=element_blank()))
-		p <- plot_grid(ggplt1, ggplt2, ggplt3, ncol=1, align="v", rel_heights = c(3,3,2))
+		p <- cowplot::plot_grid(ggplt1, ggplt2, ggplt3, ncol=1, align="v", rel_heights = c(3,3,2))
 		plots[[length(plots)+1]] <- p
 	}
 

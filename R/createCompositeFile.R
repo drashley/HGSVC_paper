@@ -14,6 +14,7 @@
 #' @param keep.duplicate.reads A logical indicating whether or not duplicate reads should be kept.
 #' @param WC.cutoff Percentage of WW or CC reads to consider chromosome being WW or CC
 #' @importFrom gtools mixedsort
+#' @import GenomicRanges
 #' @author Ashley Sanders, David Porubsky
 #' @export
 
@@ -24,23 +25,20 @@
 #WC.cutoff=0.90
 
 createCompositeFile <- function(file.list, chromosomes=NULL, pairedEndReads=FALSE, min.mapq=10, keep.duplicate.reads=FALSE, WC.cutoff=0.90) {
-
 	message("Creating composite file from ", length(file.list), " bam files")
 
 	composite.bam.grl <- GenomicRanges::GRangesList()
 	for (bamfile in file.list) {
 		#message("Working on file ",bamfile)
-
 		fragments <- suppressWarnings( bam2GRanges(bamfile, pairedEndReads=pairedEndReads, chromosomes=chromosomes, min.mapq=min.mapq, keep.duplicate.reads=keep.duplicate.reads) )
 
 		composite.bam <- GenomicRanges::GRangesList()
 		for (chr in unique(seqnames(fragments))) {
 			#message("Working on chromosome ",chr)
-		
 			chr.fragments <- fragments[seqnames(fragments)==chr]
-
-			plus.count <- table(strand(chr.fragments))[1]
-			minus.count <- table(strand(chr.fragments))[2]
+			tab.counts <- BiocGenerics::table(strand(chr.fragments))
+			plus.count <- tab.counts[1]
+			minus.count <- tab.counts[2]
 
 			## Ashley's secret formula
 			wcCall <- round( ( minus.count - plus.count ) / length(chr.fragments), digits=3 )
