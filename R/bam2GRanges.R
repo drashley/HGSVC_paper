@@ -10,7 +10,7 @@
 #' @param keep.duplicate.reads A logical indicating whether or not duplicate reads should be kept.
 #' @importFrom Rsamtools indexBam scanBamHeader ScanBamParam scanBamFlag
 #' @importFrom GenomicAlignments readGAlignmentPairsFromBam readGAlignmentsFromBam first
-#' @author Aaron Taudt
+#' @author Aaron Taudt, David Porubsky, Ashley Sanders
 #' @export
 bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FALSE, min.mapq=10, keep.duplicate.reads=TRUE) {
 
@@ -43,36 +43,89 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 	gr <- GenomicRanges::GRanges(seqnames=Rle(chroms2use), ranges=IRanges(start=rep(1, length(chroms2use)), end=chrom.lengths[chroms2use]))
 	if (keep.duplicate.reads) {
 		if (pairedEndReads) {
-			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
+			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(tag="XA", which=range(gr), what='mapq'))
 		} else {
-			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq'))
+			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(tag="XA", which=range(gr), what='mapq'))
 		}
 	} else {
 		if (pairedEndReads) {
-			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
+			data.raw <- GenomicAlignments::readGAlignmentPairs(file, index=bamindex, param=Rsamtools::ScanBamParam(tag="XA", which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
 		} else {
-			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
+			data.raw <- GenomicAlignments::readGAlignments(file, index=bamindex, param=Rsamtools::ScanBamParam(tag="XA", which=range(gr), what='mapq', flag=scanBamFlag(isDuplicate=F)))
 		}
 	}
+
 	if (pairedEndReads) {
-		data.first <- as(GenomicAlignments::first(data.raw), 'GRanges')
-		data.last <- as(GenomicAlignments::last(data.raw), 'GRanges')
-		strand(data.last) <- strand(data.first)
-		data <- sort(c(data.first, data.last))
+		#data.first <- as(GenomicAlignments::first(data.raw), 'GRanges')
+		#data.last <- as(GenomicAlignments::last(data.raw), 'GRanges')
+		#strand(data.last) <- strand(data.first)
+		#data <- sort(c(data.first, data.last))
+		
+		data.prop.pairs <- data.raw[GenomicAlignments::isProperPair(data.raw)] #only proper pairs can be merged into single fragment (no negative ranges)
+
+		data.first <- as(GenomicAlignments::first(data.prop.pairs), 'GRanges')
+		data.last <- as(GenomicAlignments::last(data.prop.pairs), 'GRanges')
+
+		## Filter by mapping quality
+		if (!is.null(min.mapq)) {
+			if (any(is.na(mcols(data.first)$mapq)) | any(is.na(mcols(data.last)$mapq))) {
+				warning(paste0(file,": Reads with mapping quality NA (=255 in BAM file) found and removed. Set 'min.mapq=NULL' to keep all reads."))
+				mcols(data.first)$mapq[is.na(mcols(data.first)$mapq)] <- -1
+				mcols(data.last)$mapq[is.na(mcols(data.last)$mapq)] <- -1
+			}
+			
+			data.first.filt <- mcols(data.first)$mapq >= min.mapq
+			data.last.filt <- mcols(data.last)$mapq >= min.mapq
+
+			idx.merge <- which( apply( cbind(data.first.filt, data.last.filt), 1, all ) )  #take pairs with both having set mapq
+
+			data.first.merge <- data.first[idx.merge]
+			data.last.merge <- data.last[idx.merge]
+			
+			#take reads where not both mates have the expected mapping quality
+			nrow <- 1:length(data.prop.pairs)
+			idx.singlets <- setdiff(nrow, idx.merge)
+
+			data.first.single <- data.first[idx.singlets]
+			data.last.single <- data.last[idx.singlets]
+			
+			data.singlets <- c(data.first.single, data.last.single)
+			data.singlets <- data.singlets[mcols(data.singlets)$mapq >= min.mapq] #filter singeltons by mapping quality
+		}
+
+		#split reads by directionality
+		data.first.plus <- data.first.merge[strand(data.first.merge) == '+']
+		data.first.minus <- data.first.merge[strand(data.first.merge) == '-']
+		data.last.plus <- data.last.merge[strand(data.last.merge) == '+']
+		data.last.minus <- data.last.merge[strand(data.last.merge) == '-']
+
+		#merge pairs into a single range
+		frag.plus.mapq <- data.first.plus$mapq + data.last.minus$mapq
+		frag.minus.mapq <- data.first.minus$mapq + data.last.plus$mapq
+		
+		data.frag.plus <- GenomicRanges::GRanges(seqnames=seqnames(data.first.plus), ranges=IRanges(start=start(data.first.plus), end=end(data.last.minus)), strand=strand(data.first.plus), mapq=frag.plus.mapq)
+		data.frag.minus <- GenomicRanges::GRanges(seqnames=seqnames(data.first.minus), ranges=IRanges(start=start(data.last.plus), end=end(data.first.minus)), strand=strand(data.first.minus), mapq=frag.minus.mapq)
+		
+		data <- sort(c(data.frag.plus, data.frag.minus, data.singlets))
+
 	} else {
 		data <- as(data.raw, 'GRanges')
-	}
-	## Filter by mapping quality
-	if (!is.null(min.mapq)) {
-		if (any(is.na(mcols(data)$mapq))) {
-			warning(paste0(file,": Reads with mapping quality NA (=255 in BAM file) found and removed. Set 'min.mapq=NULL' to keep all reads."))
-			mcols(data)$mapq[is.na(mcols(data)$mapq)] <- -1
-		}
+
+		## Filter by mapping quality
+		if (!is.null(min.mapq)) {
+			if (any(is.na(mcols(data)$mapq))) {
+				warning(paste0(file,": Reads with mapping quality NA (=255 in BAM file) found and removed. Set 'min.mapq=NULL' to keep all reads."))
+				mcols(data)$mapq[is.na(mcols(data)$mapq)] <- -1
+			}
 		data <- data[mcols(data)$mapq >= min.mapq]
+		}
 	}
+
+	## filter XA tag
+	#data <- data[is.na(mcols(data)$XA)]
+	
 	seqlevels(data) <- seqlevels(gr)
 	return(data)
-
 }
 
 

@@ -5,10 +5,10 @@
 \title{Wrapper function for breakpointR}
 \usage{
 runBreakpointrALL(datapath = NULL, dataDirectory = "BreakPointR_analysis",
-  pairedEndReads = FALSE, chromosomes = NULL, windowsize = 100,
+  pairedEndReads = TRUE, chromosomes = NULL, windowsize = 100,
   scaleWindowSize = T, trim = 10, peakTh = 0.33, zlim = 3.291,
   bg = 0.02, minReads = 10, writeBed = T, verbose = T, depthTable = T,
-  createCompositeFile = F)
+  createCompositeFile = F, WC.cutoff = 0.9)
 }
 \arguments{
 \item{dataDirectory}{Output directory. If non-existent it will be created.}

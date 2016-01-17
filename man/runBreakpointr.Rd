@@ -5,7 +5,7 @@
 \title{Wrapper function for breakpointR}
 \usage{
 runBreakpointr(input.data, dataDirectory = "./BreakPointR_analysis/",
-  pairedEndReads = FALSE, chromosomes = NULL, windowsize = 100,
+  pairedEndReads = TRUE, chromosomes = NULL, windowsize = 100,
   scaleWindowSize = T, trim = 10, peakTh = 0.33, zlim = 3.291,
   bg = 0.02, minReads = 10, writeBed = T, verbose = T, depthTable = T)
 }

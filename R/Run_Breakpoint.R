@@ -24,16 +24,10 @@
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', pairedEndReads=FALSE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
+runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
 
-	fileDestination <- dataDirectory
 	if (!file.exists(dataDirectory)) {
 		dir.create(dataDirectory)
-	}
-
-	SummaryfileDestination <- file.path(dataDirectory, 'Summary_files/')
-	if (!file.exists(SummaryfileDestination)) {
-		dir.create(SummaryfileDestination)
 	}
 
 	## check the class of the input data
@@ -76,10 +70,24 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		message("Finding breakpoints")
 		breaks<- breakSeekr(deltaWs, trim=trim, peakTh=peakTh, zlim=zlim)
 
-		message("Genotyping")
+		## Genotyping
 		if (length(breaks) >0 ) {
-			## genotype the file between the breaks
+			maxiter <- 10
+			iter <- 1
+			cat("\r","Genotyping ",iter)
+			flush.console()
 			newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
+			prev.breaks <- breaks	
+			breaks <- newBreaks
+			while (length(prev.breaks) > length(newBreaks) && !is.null(breaks) ) {
+				flush.console()
+				iter <- iter + 1
+				cat("\r","Genotyping ",iter)	
+				newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
+				prev.breaks <- breaks	
+				breaks <- newBreaks
+				if (iter == maxiter) { break }
+			}
 		} else {
 			newBreaks<-NULL # assigns something to newBreaks if no peaks found
 		}
@@ -144,7 +152,6 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		}
 		
 		### Write to BED ###
-		chrfileDestination <- file.path(fileDestination, chr)
 		insertchr <- function(hmm.gr) {
 			mask <- which(!grepl('chr', seqnames(hmm.gr)))
 			mcols(hmm.gr)$chromosome <- as.character(seqnames(hmm.gr))
@@ -152,62 +159,13 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			mcols(hmm.gr)$chromosome <- as.factor(mcols(hmm.gr)$chromosome)
 			return(hmm.gr)
 		}
-		if (depthTable==T && !is.null(newBreaks) && length(newBreaks)>0) # write a table with the depth information for everything between the breaks
-		{
-			message("Writing depthTable")
-			outputFile <- insertchr(newBreaks)
-			depths <- round(outputFile$readNo / (end(outputFile)-start(outputFile))*1000000, digits=2)      
-			depthT<- cbind(as.data.frame(outputFile), depths) # depths = chr, start, end, readNo, Ws, Cs, genoT, pVal
-			if( chr == 'chr1'){ # write column names
-				write.table(depthT, file=file.path(fileDestination, paste0(basename(input.data), '_depthTable.txt')), row.names=FALSE, col.names=T, quote=FALSE, append=F)
-			} else{
-				write.table(depthT, file=file.path(fileDestination, paste0(basename(input.data), '_depthTable.txt')), row.names=FALSE, col.names=F, quote=FALSE, append=T)
-			}
-		}
+    
+		inFile <- insertchr(deltaWs)
+		if (!is.null(newBreaks)) { newBreaks <- insertchr(newBreaks) }
 		if (writeBed==T) {
 			## WRITE ALL THE DATA INTO A SINGLE BED FILE:
-			# write table of fileFreqs
-			deltaWs <- insertchr(deltaWs)
-			bedfile<- as.data.frame(deltaWs)[c('chromosome','start','end','strand','preads')]
-			bedfile$name <- 0
-			bedfile <- bedfile[c('chromosome','start','end','name','preads','strand')]
-			names(bedfile) <- c('chromosome','start','end','name','score','strand')
-			head<- paste('track name=', basename(input.data), '_reads_', chr, ' visibility=1 colorByStrand="103,139,139 243,165,97"', sep="")
-			write.table(head, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')   
-			write.table(bedfile, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')
-			
-			## append the bedgraph of deltaWs:
-			bedG<- as.data.frame(deltaWs)[c('chromosome','start','end','deltaW')]
-			head<- paste('track type=bedGraph name=', basename(input.data),'_dWs', '_bin', reads.per.window, '_', chr, ' description=BedGraph_of_deltaWs_',basename(input.data), '_',  chr, ' visibility=full color=200,100,10', sep="")
-			write.table(head, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')   
-			write.table(bedG, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')      
-			
-			## append the breakpoints:
-			if (is.null(newBreaks)) {
-				bpG<- cbind(chr,0,1,'na')
-			} else {
-				newBreaks <- insertchr(newBreaks)
-				bpG<-  as.data.frame(newBreaks)[c('chromosome','start','end','genoT')]
-			}  
-			head<- paste('track name=', basename(input.data), '_BPs', '_bin', reads.per.window, '_', chr, ' description=BedGraph_of_breakpoints_',basename(input.data), '_',  chr, ' visibility=pack color=75,125,180', sep="")
-			write.table(head, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')   
-			write.table(bpG, file=paste(chrfileDestination, basename(input.data), '_', chr, '_bin', reads.per.window, '_breakpointR.bed', sep=""), row.names=FALSE, col.names=F, quote=F, append=T, sep='\t')
-
-		}
-		
-		### Write an INDEX file of deltaWs and breaks for ALL CHR
-		if( chr== 'chr1'){ # write header
-			head_reads<- paste('track name=', basename(input.data), '_reads visibility=1 colorByStrand="103,139,139 243,165,97"', sep="")
-			write.table(head_reads, file=paste(SummaryfileDestination, basename(input.data), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
-			head_dW<- paste('track type=bedGraph name=', basename(input.data),'_dWs description=BedGraph_of_deltaWs_',basename(input.data), '_allChr visibility=full color=200,100,10', sep="")
-			write.table(head_dW, file=paste(SummaryfileDestination, basename(input.data), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
-			head_br<- paste('track name=', basename(input.data), '_BPs description=BedGraph_of_breakpoints_',basename(input.data),'_allChr visibility=dense color=75,125,180', sep="")
-			write.table(head_br,  file=paste(SummaryfileDestination, basename(input.data), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')
-		} # write data
-		write.table(bedfile,file=paste(SummaryfileDestination, basename(input.data), '_reads.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')   
-		write.table(bedG, file=paste(SummaryfileDestination, basename(input.data), '_DeltaWs.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
-		write.table(bpG, file=paste(SummaryfileDestination, basename(input.data), '_breakPoints.txt', sep=""), row.names=FALSE, col.names=F, quote=FALSE, append=T, sep='\t')
-		
+		  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, inFile=inFile, deltaGraph=T, breakTrack=newBreaks, bin=reads.per.window, summary=T)
+      		}		
 	}
 	## creating list of list where filename is first level list ID and deltas, breaks and counts are second list IDs
 	deltas.all.chroms <- unlist(deltas.all.chroms)
