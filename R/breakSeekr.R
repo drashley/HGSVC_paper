@@ -35,7 +35,6 @@ breakSeekr<- function(deltaWs, trim=10, peakTh=0.33, zlim=3.291)
     zscores <- (deltaW - th) / sd(trimVs)
   }  
   
-# !!MAJOR CHANGE!! #
 	## Make peak list
 	mask <- zscores > zlim
 	rlemask <- rle(mask)
@@ -63,7 +62,6 @@ breakSeekr<- function(deltaWs, trim=10, peakTh=0.33, zlim=3.291)
 	} else {
 		message('no peaks here!')
 	}
-# !!MAJOR CHANGE!! #
 
 	# simple plot, if desired
 	# plot(deltaWs[,1], deltaWs[,3], type="l")

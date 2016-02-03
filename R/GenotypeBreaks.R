@@ -28,15 +28,15 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 		if (is.na(roiReads)) {
 			return(c(NA,NA))
 		}
-    if( roiReads >= minR){
-    CCpVal<- fisher.test(matrix(c(cReads, wReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
-    WCpVal<-fisher.test(matrix(c(cReads, wReads, round(roiReads*0.5), round(roiReads*0.5)), ncol=2, byrow=T))[[1]]
-    WWpVal<- fisher.test(matrix(c(wReads, cReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
+    if( roiReads >= minR ) {
+	    CCpVal<- fisher.test(matrix(c(cReads, wReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
+	    WCpVal<-fisher.test(matrix(c(cReads, wReads, round(roiReads*0.5), round(roiReads*0.5)), ncol=2, byrow=T))[[1]]
+	    WWpVal<- fisher.test(matrix(c(wReads, cReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
     
-    pVal<- cbind(CCpVal, WCpVal, WWpVal)
-    maxP<- max(pVal)
-    #if (pVal[which(pVal != maxP)][1] < 0.05 & pVal[which(pVal != maxP)][2] < 0.05) { signf <- '*'} else {signf <- 'ns'}
-    if (maxP == CCpVal) { bestFit <- 'cc'} else if (maxP == WCpVal) { bestFit <- 'wc' } else{ bestFit <- 'ww'}
+	    pVal<- cbind(CCpVal, WCpVal, WWpVal)
+	    maxP<- max(pVal)
+	    #if (pVal[which(pVal != maxP)][1] < 0.05 & pVal[which(pVal != maxP)][2] < 0.05) { signf <- '*'} else {signf <- 'ns'}
+	    if (maxP == CCpVal) { bestFit <- 'cc'} else if (maxP == WCpVal) { bestFit <- 'wc' } else{ bestFit <- 'ww'}
     } else { 
 			return(c(NA,NA))
     }
@@ -44,7 +44,6 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
   }  
   ############################
   
-# !!MAJOR CHANGE!! #
   # create ranges between the breakpoints -> start and stops in a dataframe, use this to genotype between
 	breaks.strand <- breaks
 	strand(breaks.strand) <- '*'
@@ -58,7 +57,6 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 	Cs <- GenomicRanges::countOverlaps(breakrange, fragments)
 	strand(breakrange) <- '*'
 	readNo <- Ws + Cs
-# !!MAJOR CHANGE!! #
   
   ## bestFit genotype each region by Fisher Exact test
   fisher <- sapply(1:length(breakrange), function(x) genotype(Cs[x], Ws[x], readNo[x]))

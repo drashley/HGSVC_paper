@@ -10,12 +10,22 @@
 #' @export
 deltaWCalculator <- function(frags, reads.per.window=10) {
 
+	if (reads.per.window == 0) {
+		stop("'reads.per.window' must be >= 1")
+	}
+	if (reads.per.window < 10) {
+		warning("'reads.per.window' should at least be 10")
+	}
 	frags.split <- split(frags, seqnames(frags))
 	reads.per.chrom <- sapply(frags.split, length)
 	chroms2parse <- names(reads.per.chrom)[reads.per.chrom>2*reads.per.window]
 	chroms2skip <- setdiff(names(reads.per.chrom),chroms2parse)
 	if (length(chroms2skip)>0) {
 		warning(paste0("Not parsing chromosomes ",paste(chroms2skip, collapse=',')," because they do not have enough reads."))
+	}
+	if (length(chroms2parse)==0) {
+		warning("None of the specified chromosomes has enough reads. Doing nothing.")
+		return(GRanges())
 	}
 
 	frags.new <- GRangesList()
@@ -27,6 +37,13 @@ deltaWCalculator <- function(frags, reads.per.window=10) {
 		f$preads <- c(rep(NA,reads.per.window),diff(BiocGenerics::as.vector(f$pcsum),lag=reads.per.window))
 		f$mreads <- c(rep(NA,reads.per.window),diff(BiocGenerics::as.vector(f$mcsum),lag=reads.per.window))
 		f$deltaW <- abs(c(diff(f$preads,lag=reads.per.window),rep(NA,reads.per.window)))
+		# Shift deltaWs to region between reads
+		start.f <- end(f)
+		end.f <- c(start(f)[-1],seqlengths(frags)[chrom])
+		mask <- start.f < end.f
+		f <- f[mask]
+		start(f) <- start.f[mask]
+		end(f) <- end.f[mask]
 		frags.new[[chrom]] <- f
 	}
 	frags.new <- unlist(frags.new)

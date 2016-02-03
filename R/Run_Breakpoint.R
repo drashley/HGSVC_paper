@@ -50,14 +50,15 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	breaks.all.chroms <- GenomicRanges::GRangesList()
 	counts.all.chroms <- GenomicRanges::GRangesList()
 	for (chr in unique(seqnames(fragments))) {
-
 		message("Working on chromosome ",chr)
+		fragments.chr <- fragments[seqnames(fragments)==chr]
+		fragments.chr <- keepSeqlevels(fragments.chr, chr)
 
-		message("Calculating deltaWs")
-		if (scaleWindowSize==T){
+		message("  calculating deltaWs")
+		if (scaleWindowSize==T) {
 			## normalize only for size of the chromosome 1
-			reads.per.window <- round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr])) # scales the bin to chr size, anchored to chr1 (249250621 bp) 
-			dw <- suppressWarnings( deltaWCalculator(fragments[seqnames(fragments)==chr], reads.per.window=reads.per.window) )
+			reads.per.window <- max(10, round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr]))) # scales the bin to chr size, anchored to chr1 (249250621 bp)
+			dw <- deltaWCalculator(fragments.chr, reads.per.window=reads.per.window)
 			
 			## normalize for size of chromosome one and for read counts of each chromosome
 			#num.reads <- length( fragments[seqnames(fragments)==chr] )
@@ -67,14 +68,14 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 		}
 		deltaWs <- dw[seqnames(dw)==chr]
 
-		message("Finding breakpoints")
-		breaks<- breakSeekr(deltaWs, trim=trim, peakTh=peakTh, zlim=zlim)
+		message("  finding breakpoints")
+		breaks<- suppressMessages( breakSeekr(deltaWs, trim=trim, peakTh=peakTh, zlim=zlim) )
 
 		## Genotyping
 		if (length(breaks) >0 ) {
 			maxiter <- 10
 			iter <- 1
-			cat("\r","Genotyping ",iter)
+			message("  genotyping ",iter)
 			flush.console()
 			newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
 			prev.breaks <- breaks	
@@ -82,7 +83,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			while (length(prev.breaks) > length(newBreaks) && !is.null(breaks) ) {
 				flush.console()
 				iter <- iter + 1
-				cat("\r","Genotyping ",iter)	
+				message("  genotyping ",iter)	
 				newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
 				prev.breaks <- breaks	
 				breaks <- newBreaks
@@ -94,14 +95,13 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 
 		### count reads between the breaks and write into GRanges
 		if (is.null(newBreaks)) {
-			Ws <- length(deltaWs[strand(deltaWs) == '-'])
-			Cs <- length(deltaWs[strand(deltaWs) == '+'])
-			start.pos <- start(deltaWs)[1]
-			end.pos <- end(deltaWs)[length(end(deltaWs))]
-			chrRange <- GenomicRanges::GRanges(seqnames=chr, ranges=IRanges(start=start.pos, end=end.pos))	
+			
+			Ws <- length(which(as.logical(strand(fragments.chr) == '-')))
+			Cs <- length(which(as.logical(strand(fragments.chr) == '+')))
+			chrRange <- GRanges(seqnames=chr, ranges=IRanges(start=1, end=seqlengths(fragments.chr)[chr]))
 			counts <- cbind(Ws,Cs)
 			mcols(chrRange) <- counts
-			seqlengths(chrRange) <- seqlengths(deltaWs)[chr]
+			seqlengths(chrRange) <- seqlengths(fragments.chr)[chr]
 
 			## genotype entire chromosome
 			WC.ratio <- (chrRange$Ws-chrRange$Cs)/sum(c(chrRange$Ws,chrRange$Cs))
@@ -114,7 +114,6 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			} else {
 				state <- '?'
 			}					
-
 			chrRange$states <- state
 			suppressWarnings( counts.all.chroms[[chr]] <- chrRange )
 	
@@ -142,30 +141,33 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			counts <- cbind(Ws,Cs)
 			mcols(breakrange) <- counts
 			breakrange$states <- states
-			suppressWarnings( counts.all.chroms[[chr]] <- breakrange )
+			counts.all.chroms[[chr]] <- suppressWarnings( breakrange )
 		}
 
 		### write breaks and deltas into GRanges
-		suppressWarnings( deltas.all.chroms[[chr]] <- deltaWs[,'deltaW'] )  #select only deltaW metadata column to store
-		if (length(newBreaks)) {
-			suppressWarnings( breaks.all.chroms[[chr]] <- newBreaks )
+		if (length(deltaWs) > 0) {
+			deltas.all.chroms[[chr]] <- suppressWarnings( deltaWs[,'deltaW'] )  #select only deltaW metadata column to store
+		}
+		if (length(newBreaks) > 0) {
+			breaks.all.chroms[[chr]] <- suppressWarnings( newBreaks )
 		}
 		
 		### Write to BED ###
-		insertchr <- function(hmm.gr) {
-			mask <- which(!grepl('chr', seqnames(hmm.gr)))
-			mcols(hmm.gr)$chromosome <- as.character(seqnames(hmm.gr))
-			mcols(hmm.gr)$chromosome[mask] <- sub(pattern='^', replacement='chr', mcols(hmm.gr)$chromosome[mask])
-			mcols(hmm.gr)$chromosome <- as.factor(mcols(hmm.gr)$chromosome)
-			return(hmm.gr)
+		insertchr <- function(gr) {
+			mask <- which(!grepl('chr', seqnames(gr)))
+			mcols(gr)$chromosome <- as.character(seqnames(gr))
+			mcols(gr)$chromosome[mask] <- sub(pattern='^', replacement='chr', mcols(gr)$chromosome[mask])
+			mcols(gr)$chromosome <- as.factor(mcols(gr)$chromosome)
+			return(gr)
 		}
     
-		inFile <- insertchr(deltaWs)
+		if (!is.null(fragments.chr)) { fragments.chr <- insertchr(fragments.chr) }
 		if (!is.null(newBreaks)) { newBreaks <- insertchr(newBreaks) }
+		if (!is.null(deltaWs)) { deltaWs <- insertchr(deltaWs) }
 		if (writeBed==T) {
 			## WRITE ALL THE DATA INTO A SINGLE BED FILE:
-		  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, inFile=inFile, deltaGraph=T, breakTrack=newBreaks, bin=reads.per.window, summary=T)
-      		}		
+	  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, fragments=fragments.chr, deltaWs=deltaWs, breakTrack=newBreaks, bin=reads.per.window, summary=T)
+		}
 	}
 	## creating list of list where filename is first level list ID and deltas, breaks and counts are second list IDs
 	deltas.all.chroms <- unlist(deltas.all.chroms)
