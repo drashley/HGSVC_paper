@@ -20,11 +20,10 @@
 #' @param minReads The minimum number of reads required for genotyping.
 #' @param writeBed If \code{TRUE}, will generate a bed of reads and deltaWs and breaks for upload onto the UCSC genome browser.
 #' @param verbose Verbose messages if \code{TRUE}.
-#' @param depthTable If \code{TRUE}, will generate a table that also contains reads/Mb between breaks (important for SCE calls).
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T) {
+runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T) {
 
 	if (!file.exists(dataDirectory)) {
 		dir.create(dataDirectory)
@@ -152,22 +151,6 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 			breaks.all.chroms[[chr]] <- suppressWarnings( newBreaks )
 		}
 		
-		### Write to BED ###
-		insertchr <- function(gr) {
-			mask <- which(!grepl('chr', seqnames(gr)))
-			mcols(gr)$chromosome <- as.character(seqnames(gr))
-			mcols(gr)$chromosome[mask] <- sub(pattern='^', replacement='chr', mcols(gr)$chromosome[mask])
-			mcols(gr)$chromosome <- as.factor(mcols(gr)$chromosome)
-			return(gr)
-		}
-    
-		if (!is.null(fragments.chr)) { fragments.chr <- insertchr(fragments.chr) }
-		if (!is.null(newBreaks)) { newBreaks <- insertchr(newBreaks) }
-		if (!is.null(deltaWs)) { deltaWs <- insertchr(deltaWs) }
-		if (writeBed==T) {
-			## WRITE ALL THE DATA INTO A SINGLE BED FILE:
-	  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, fragments=fragments.chr, deltaWs=deltaWs, breakTrack=newBreaks, bin=reads.per.window, summary=T)
-		}
 	}
 	## creating list of list where filename is first level list ID and deltas, breaks and counts are second list IDs
 	deltas.all.chroms <- unlist(deltas.all.chroms)
@@ -176,16 +159,17 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	names(deltas.all.chroms) <- NULL
 	names(breaks.all.chroms) <- NULL
 	names(counts.all.chroms) <- NULL
-	deltas.list <- GenomicRanges::GRangesList()
-	breaks.list <- GenomicRanges::GRangesList()
-	counts.list <- GenomicRanges::GRangesList()
-	deltas.list[[filename]] <- deltas.all.chroms
-	breaks.list[[filename]] <- breaks.all.chroms
-	counts.list[[filename]] <- counts.all.chroms
 	
 	## save set parameters for future reference
 	parameters <- c(windowsize=windowsize, scaleWindowSize=scaleWindowSize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads)
 
-	return(list(deltas=deltas.list, breaks=breaks.list, counts=counts.list, params=parameters))
+	### Write to BED ###
+	if (writeBed==T) {
+		## WRITE ALL THE DATA INTO A SINGLE BED FILE:
+		message("Writing BED files")
+  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, fragments=fragments, deltaWs=deltas.all.chroms, breakTrack=breaks.all.chroms, bin=reads.per.window)
+	}
+	
+	return(list(deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters))
 }
 

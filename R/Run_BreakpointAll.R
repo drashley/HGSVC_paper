@@ -20,11 +20,10 @@
 #' @param minReads The minimum number of reads required for genotyping.
 #' @param writeBed If \code{TRUE}, will generate a bed of reads and deltaWs and breaks for upload onto the UCSC genome browser.
 #' @param verbose Verbose messages if \code{TRUE}.
-#' @param depthTable If \code{TRUE}, will generate a table that also contains reads/Mb between breaks (important for SCE calls).
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, depthTable=T, createCompositeFile=F, WC.cutoff=0.9) {
+runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, createCompositeFile=F, WC.cutoff=0.9) {
 
 	files <- list.files(datapath, pattern=".bam$", full=T)
 
@@ -38,7 +37,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 
 	if (createCompositeFile) {
 		fragments <- createCompositeFile(file.list=files, chromosomes=chromosomes, pairedEndReads=pairedEndReads, WC.cutoff=WC.cutoff)
-		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=file.path(dataDirectory, 'CompositeFile'), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=file.path(dataDirectory, 'CompositeFile'), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
 		deltas <- unlist(deltas.breaks.counts.obj$deltas)
 		breaks <- unlist(deltas.breaks.counts.obj$breaks)
 		counts <- unlist(deltas.breaks.counts.obj$counts)
@@ -60,7 +59,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 		for (bamfile in files) {
 			message("Working on file ",bamfile)
 
-			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose, depthTable=depthTable)
+			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
 
 			deltas <- unlist(deltas.breaks.counts.obj$deltas)
 			breaks <- unlist(deltas.breaks.counts.obj$breaks)
