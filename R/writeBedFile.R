@@ -57,7 +57,7 @@ writeBedFile <- function(fileName, dataDirectory, fragments=NULL, deltaWs=NULL, 
 		deltaWs <- insertchr(deltaWs)
 		savefile.deltaWs <- file.path(dataDirectory, paste0('AllChr_', basename(fileName), '_deltaWs.bed.gz'))
 		savefile.deltaWs.gz <- gzfile(savefile.deltaWs, 'w')
-		head_dW<- paste('track type=bedGraph name=', index,'_dWs description=BedGraph_of_deltaWs_',basename(fileName), '_allChr visibility=full color=200,100,10', sep="")
+		head_dW<- paste('track type=bedGraph name=', index,'_dWs description=BedGraph_of_deltaWs_',basename(fileName), '_allChr visibility=dense color=200,100,10', sep="")
 		write.table(head_dW, file=savefile.deltaWs.gz, row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
 		if (length(deltaWs)>0) {
 			bedG <- as.data.frame(deltaWs)[c('chromosome','start','end','deltaW')]
