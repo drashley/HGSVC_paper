@@ -87,11 +87,8 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 			data.last.merge <- data.last[mask]
 			
 			#take reads where not both mates have the expected mapping quality
-			nrow <- 1:length(data.prop.pairs)
-			idx.singlets <- setdiff(nrow, idx.merge)
-
-			data.first.single <- data.first[idx.singlets]
-			data.last.single <- data.last[idx.singlets]
+			data.first.single <- data.first[!mask]
+			data.last.single <- data.last[!mask]
 			
 			data.singlets <- c(data.first.single, data.last.single)
 			data.singlets <- data.singlets[mcols(data.singlets)$mapq >= min.mapq] #filter singeltons by mapping quality
