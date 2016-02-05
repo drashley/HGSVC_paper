@@ -23,15 +23,15 @@
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T) {
+runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=20, writeBed=T, verbose=T) {
 
 	if (!file.exists(dataDirectory)) {
 		dir.create(dataDirectory)
 	}
 
-	## check the class of the input data
+	## check the class of the input data, make GRanges object of file
 	if ( class(input.data) != "GRanges" ) {
-		fragments <- bam2GRanges(input.data, pairedEndReads=pairedEndReads, chromosomes=chromosomes, keep.duplicate.reads=FALSE)
+		suppressWarnings( fragments <- bam2GRanges(input.data, pairedEndReads=pairedEndReads, chromosomes=chromosomes, keep.duplicate.reads=FALSE) )
 	} else {
 		fragments <- input.data
 		input.data <- 'CompositeFile'
@@ -167,9 +167,24 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis/', 
 	if (writeBed==T) {
 		## WRITE ALL THE DATA INTO A SINGLE BED FILE:
 		message("Writing BED files")
-  	writeBedFile(fileName=filename, dataDirectory=dataDirectory, fragments=fragments, deltaWs=deltas.all.chroms, breakTrack=breaks.all.chroms, bin=reads.per.window)
+		destination <- file.path(dataDirectory, filename)
+		if (!file.exists(destination)) {
+			dir.create(destination)
+		}
+  		writeBedFile(fileName=filename, dataDirectory=destination, fragments=fragments, deltaWs=deltas.all.chroms, breakTrack=breaks.all.chroms, bin=reads.per.window)
 	}
-	
-	return(list(deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters))
+
+	### Write to RData ###
+	data.obj <- list(deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters)
+	data.store <- file.path(dataDirectory, 'PLOT')
+
+	if (!file.exists(data.store)) {
+		dir.create(data.store)
+	}
+
+	destination <- file.path(data.store, paste0(filename, '.RData'))
+	save(data.obj, file=destination)
+
+	return(data.obj)
 }
 

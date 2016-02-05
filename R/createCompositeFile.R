@@ -24,14 +24,14 @@
 #datapath = '.'
 #WC.cutoff=0.90
 
-createCompositeFile <- function(file.list, chromosomes=NULL, pairedEndReads=FALSE, min.mapq=10, keep.duplicate.reads=FALSE, WC.cutoff=0.90) {
+createCompositeFile <- function(file.list, chromosomes=NULL, pairedEndReads=TRUE, min.mapq=10, keep.duplicate.reads=FALSE, WC.cutoff=0.90) {
 	message("Creating composite file from ", length(file.list), " bam files")
 
 	composite.bam.grl <- GenomicRanges::GRangesList()
 	for (bamfile in file.list) {
 		#message("Working on file ",bamfile)
 		fragments <- suppressWarnings( bam2GRanges(bamfile, pairedEndReads=pairedEndReads, chromosomes=chromosomes, min.mapq=min.mapq, keep.duplicate.reads=keep.duplicate.reads) )
-	        if (length(fragments) > 0){mcols(fragments)$lib <- bamfile} # appends file name to reads
+	        if (length(fragments) > 0) { mcols(fragments)$lib <- bamfile } # appends file name to reads
 		composite.bam <- GenomicRanges::GRangesList()
 		for (chr in unique(seqnames(fragments))) {
 			#message("Working on chromosome ",chr)

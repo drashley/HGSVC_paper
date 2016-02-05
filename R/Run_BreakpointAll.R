@@ -25,6 +25,7 @@
 
 runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=10, writeBed=T, verbose=T, createCompositeFile=F, WC.cutoff=0.9) {
 
+	options(warn=-1) # suppresses warnings in function
 	files <- list.files(datapath, pattern=".bam$", full=T)
 
 	if (!file.exists(dataDirectory)) {
@@ -37,7 +38,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 
 	if (createCompositeFile) {
 		fragments <- createCompositeFile(file.list=files, chromosomes=chromosomes, pairedEndReads=pairedEndReads, WC.cutoff=WC.cutoff)
-		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=file.path(dataDirectory, 'CompositeFile'), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
+		deltas.breaks.counts.obj <- runBreakpointr(input.data=fragments, dataDirectory=dataDirectory, pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
 		deltas <- unlist(deltas.breaks.counts.obj$deltas)
 		breaks <- unlist(deltas.breaks.counts.obj$breaks)
 		counts <- unlist(deltas.breaks.counts.obj$counts)
@@ -47,11 +48,11 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 		names(breaks) <- NULL
 		names(counts) <- NULL
 
-		suppressWarnings( deltas.all.files[['CompositeFile']] <- deltas )
-		suppressWarnings( counts.all.files[['CompositeFile']] <- counts )
+		deltas.all.files[['CompositeFile']] <- deltas
+		counts.all.files[['CompositeFile']] <- counts
 
 		if (length(breaks)) {
-			suppressWarnings( breaks.all.files[['CompositeFile']] <- breaks )
+			breaks.all.files[['CompositeFile']] <- breaks
 		}
 	
 	} else {
@@ -59,7 +60,7 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 		for (bamfile in files) {
 			message("Working on file ",bamfile)
 
-			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=file.path(dataDirectory, basename(bamfile)), pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
+			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=dataDirectory, pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
 
 			deltas <- unlist(deltas.breaks.counts.obj$deltas)
 			breaks <- unlist(deltas.breaks.counts.obj$breaks)
@@ -70,14 +71,15 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 			names(breaks) <- NULL
 			names(counts) <- NULL
 
-			suppressWarnings( deltas.all.files[[bamfile]] <- deltas )
-			suppressWarnings( counts.all.files[[bamfile]] <- counts )
+			deltas.all.files[[bamfile]] <- deltas
+			counts.all.files[[bamfile]] <- counts
 			
 			if (length(breaks)) {
-				suppressWarnings( breaks.all.files[[bamfile]] <- breaks )
+				breaks.all.files[[bamfile]] <- breaks
 			}
 		}
 	}
-	return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters)) 
+	return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters))
+	options(warn=0) # turns warnings back on 
 }
 

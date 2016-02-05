@@ -4,7 +4,7 @@
 \alias{createCompositeFile}
 \title{Function to create composite Strand-seq file}
 \usage{
-createCompositeFile(file.list, chromosomes = NULL, pairedEndReads = FALSE,
+createCompositeFile(file.list, chromosomes = NULL, pairedEndReads = TRUE,
   min.mapq = 10, keep.duplicate.reads = FALSE, WC.cutoff = 0.9)
 }
 \arguments{

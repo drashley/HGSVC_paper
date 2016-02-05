@@ -4,10 +4,10 @@
 \alias{runBreakpointr}
 \title{Wrapper function for breakpointR}
 \usage{
-runBreakpointr(input.data, dataDirectory = "./BreakPointR_analysis/",
+runBreakpointr(input.data, dataDirectory = "./BreakPointR_analysis",
   pairedEndReads = TRUE, chromosomes = NULL, windowsize = 100,
   scaleWindowSize = T, trim = 10, peakTh = 0.33, zlim = 3.291,
-  bg = 0.02, minReads = 10, writeBed = T, verbose = T, depthTable = T)
+  bg = 0.02, minReads = 20, writeBed = T, verbose = T)
 }
 \arguments{
 \item{dataDirectory}{Output directory. If non-existent it will be created.}
@@ -31,8 +31,6 @@ runBreakpointr(input.data, dataDirectory = "./BreakPointR_analysis/",
 \item{writeBed}{If \code{TRUE}, will generate a bed of reads and deltaWs and breaks for upload onto the UCSC genome browser.}
 
 \item{verbose}{Verbose messages if \code{TRUE}.}
-
-\item{depthTable}{If \code{TRUE}, will generate a table that also contains reads/Mb between breaks (important for SCE calls).}
 
 \item{bamfile}{A file with aligned reads in BAM format.}
 }
