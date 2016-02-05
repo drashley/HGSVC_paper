@@ -31,7 +31,7 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 	chroms2use <- intersect(chromosomes, chroms.in.data)
 	if (length(chroms2use)==0) {
 		chrstring <- paste0(chromosomes, collapse=', ')
-		stop('The specified chromosomes ', chrstring, ' do not exist in the data.')
+		stop('The specified chromosomes ', chrstring, ' do not exist in the data. Please try ', paste(paste0('chr',chromosomes), collapse=', '), ' instead.')
 	}
 	## Issue warning for non-existent chromosomes
 	diff <- setdiff(chromosomes, chroms.in.data)
@@ -66,6 +66,10 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 		data.first <- as(GenomicAlignments::first(data.prop.pairs), 'GRanges')
 		data.last <- as(GenomicAlignments::last(data.prop.pairs), 'GRanges')
 
+		## filter XA tag
+		#data.first <- data.first[is.na(mcols(data.first)$XA)]
+		#data.last <- data.last[is.na(mcols(data.last)$XA)]
+
 		## Filter by mapping quality
 		if (!is.null(min.mapq)) {
 			if (any(is.na(mcols(data.first)$mapq)) | any(is.na(mcols(data.last)$mapq))) {
@@ -76,11 +80,11 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 			
 			data.first.filt <- mcols(data.first)$mapq >= min.mapq
 			data.last.filt <- mcols(data.last)$mapq >= min.mapq
+			
+			mask <- data.first.filt & data.last.filt
 
-			idx.merge <- which( apply( cbind(data.first.filt, data.last.filt), 1, all ) )  #take pairs with both having set mapq
-
-			data.first.merge <- data.first[idx.merge]
-			data.last.merge <- data.last[idx.merge]
+			data.first.merge <- data.first[mask]
+			data.last.merge <- data.last[mask]
 			
 			#take reads where not both mates have the expected mapping quality
 			nrow <- 1:length(data.prop.pairs)
@@ -104,7 +108,11 @@ bam2GRanges <- function(file, bamindex=file, chromosomes=NULL, pairedEndReads=FA
 		frag.minus.mapq <- data.first.minus$mapq + data.last.plus$mapq
 		
 		data.frag.plus <- GenomicRanges::GRanges(seqnames=seqnames(data.first.plus), ranges=IRanges(start=start(data.first.plus), end=end(data.last.minus)), strand=strand(data.first.plus), mapq=frag.plus.mapq)
+		seqlengths(data.frag.plus) <- seqlengths(data.first)
 		data.frag.minus <- GenomicRanges::GRanges(seqnames=seqnames(data.first.minus), ranges=IRanges(start=start(data.last.plus), end=end(data.first.minus)), strand=strand(data.first.minus), mapq=frag.minus.mapq)
+		seqlengths(data.frag.minus) <- seqlengths(data.first)
+		data.singlets <- GenomicRanges::GRanges(seqnames=seqnames(data.singlets), ranges=IRanges(start=start(data.singlets), end=end(data.singlets)), strand=strand(data.singlets), mapq=data.singlets$mapq)
+		seqlengths(data.singlets) <- seqlengths(data.first)
 		
 		data <- sort(c(data.frag.plus, data.frag.minus, data.singlets))
 

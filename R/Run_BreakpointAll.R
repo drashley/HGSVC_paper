@@ -32,9 +32,9 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 		dir.create(dataDirectory)
 	}
 
-	deltas.all.files <- GenomicRanges::GRangesList()
-	breaks.all.files <- GenomicRanges::GRangesList()
-	counts.all.files <- GenomicRanges::GRangesList()
+	#deltas.all.files <- GenomicRanges::GRangesList()
+	#breaks.all.files <- GenomicRanges::GRangesList()
+	#counts.all.files <- GenomicRanges::GRangesList()
 
 	if (createCompositeFile) {
 		fragments <- createCompositeFile(file.list=files, chromosomes=chromosomes, pairedEndReads=pairedEndReads, WC.cutoff=WC.cutoff)
@@ -62,24 +62,24 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 
 			deltas.breaks.counts.obj <- runBreakpointr(input.data=bamfile, dataDirectory=dataDirectory, pairedEndReads=pairedEndReads, chromosomes=chromosomes, windowsize=windowsize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads, writeBed=writeBed, verbose=verbose)
 
-			deltas <- unlist(deltas.breaks.counts.obj$deltas)
-			breaks <- unlist(deltas.breaks.counts.obj$breaks)
-			counts <- unlist(deltas.breaks.counts.obj$counts)
-			parameters <- deltas.breaks.counts.obj$param
+			#deltas <- unlist(deltas.breaks.counts.obj$deltas)
+			#breaks <- unlist(deltas.breaks.counts.obj$breaks)
+			#counts <- unlist(deltas.breaks.counts.obj$counts)
+			#parameters <- deltas.breaks.counts.obj$param
 
-			names(deltas) <- NULL
-			names(breaks) <- NULL
-			names(counts) <- NULL
+			#names(deltas) <- NULL
+			#names(breaks) <- NULL
+			#names(counts) <- NULL
 
-			deltas.all.files[[bamfile]] <- deltas
-			counts.all.files[[bamfile]] <- counts
+			#deltas.all.files[[bamfile]] <- deltas
+			#counts.all.files[[bamfile]] <- counts
 			
-			if (length(breaks)) {
-				breaks.all.files[[bamfile]] <- breaks
-			}
+			#if (length(breaks)) {
+			#	breaks.all.files[[bamfile]] <- breaks
+			#}
 		}
 	}
-	return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters))
+	#return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters))
 	options(warn=0) # turns warnings back on 
 }
 
