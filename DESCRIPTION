@@ -9,15 +9,14 @@ Description: This package implements functions for finding breakpoints, plotting
 Depends:
   R (>= 3.1.0),
   GenomicRanges,
-  ggplot2,
-  reshape2,
   cowplot
 Imports:
+	foreach,
+	doParallel,
   IRanges,
   Rsamtools,
   Biostrings,
   GenomicAlignments,
-  grid,
   gtools
 Suggests:
   knitr,

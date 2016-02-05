@@ -2,9 +2,7 @@
 
 #' @param output genomic ranges from the function runBreakpointr or runBreakpointrALL
 
-#' @import ggplot2
-#' @import grid
-#' @importFrom cowplot plot_grid
+#' @import cowplot
 #' @author David Porubsky
 #' @export
 

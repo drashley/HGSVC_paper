@@ -9,7 +9,6 @@
 #' 5. write a file for each index with all chromosomes included -> can upload on to UCSC Genome browser
 #'
 #' @param bamfile A file with aligned reads in BAM format.
-#' @param dataDirectory Output directory. If non-existent it will be created.
 #' @param pairedEndReads Set to \code{TRUE} if you have paired-end reads in your file.
 #' @param chromosomes If only a subset of the chromosomes should be processed, specify them here.
 #' @param windowsize The window size used to calculate deltaWs, either an integer or 'scale'.
@@ -18,16 +17,10 @@
 #' @param zlim The number of stdev that the deltaW must pass the peakTh (ensures only significantly higher peaks are considered).
 #' @param bg The amount of background introduced into the genotype test.
 #' @param minReads The minimum number of reads required for genotyping.
-#' @param writeBed If \code{TRUE}, will generate a bed of reads and deltaWs and breaks for upload onto the UCSC genome browser.
-#' @param verbose Verbose messages if \code{TRUE}.
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=20, writeBed=T, verbose=T) {
-
-	if (!file.exists(dataDirectory)) {
-		dir.create(dataDirectory)
-	}
+runBreakpointr <- function(input.data, pairedEndReads=TRUE, chromosomes=NULL, windowsize=100, scaleWindowSize=T, trim=10, peakTh=0.33, zlim=3.291, bg=0.02, minReads=20) {
 
 	## check the class of the input data, make GRanges object of file
 	if ( class(input.data) != "GRanges" ) {
@@ -38,10 +31,11 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 	}
 
 	filename <- basename(input.data)
+	message("Working on ", filename)
 	
 	if (scaleWindowSize==F) {
 		reads.per.window <- windowsize
-		message("Calculating deltaWs")
+		message("  Calculating deltaWs")
 		dw <- deltaWCalculator(fragments, reads.per.window=reads.per.window)
 	}
 	
@@ -49,11 +43,11 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 	breaks.all.chroms <- GenomicRanges::GRangesList()
 	counts.all.chroms <- GenomicRanges::GRangesList()
 	for (chr in unique(seqnames(fragments))) {
-		message("Working on chromosome ",chr)
+		message("  Working on chromosome ",chr)
 		fragments.chr <- fragments[seqnames(fragments)==chr]
 		fragments.chr <- keepSeqlevels(fragments.chr, chr)
 
-		message("  calculating deltaWs")
+		message("    calculating deltaWs")
 		if (scaleWindowSize==T) {
 			## normalize only for size of the chromosome 1
 			reads.per.window <- max(10, round(windowsize/(seqlengths(fragments)[1]/seqlengths(fragments)[chr]))) # scales the bin to chr size, anchored to chr1 (249250621 bp)
@@ -67,14 +61,14 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 		}
 		deltaWs <- dw[seqnames(dw)==chr]
 
-		message("  finding breakpoints")
+		message("    finding breakpoints")
 		breaks<- suppressMessages( breakSeekr(deltaWs, trim=trim, peakTh=peakTh, zlim=zlim) )
 
 		## Genotyping
 		if (length(breaks) >0 ) {
 			maxiter <- 10
 			iter <- 1
-			message("  genotyping ",iter)
+			message("    genotyping ",iter)
 			flush.console()
 			newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
 			prev.breaks <- breaks	
@@ -82,7 +76,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 			while (length(prev.breaks) > length(newBreaks) && !is.null(breaks) ) {
 				flush.console()
 				iter <- iter + 1
-				message("  genotyping ",iter)	
+				message("    genotyping ",iter)	
 				newBreaks <- GenotypeBreaks(breaks, fragments, backG=bg, minReads=minReads)
 				prev.breaks <- breaks	
 				breaks <- newBreaks
@@ -140,15 +134,15 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 			counts <- cbind(Ws,Cs)
 			mcols(breakrange) <- counts
 			breakrange$states <- states
-			counts.all.chroms[[chr]] <- suppressWarnings( breakrange )
+			suppressWarnings( counts.all.chroms[[chr]] <- breakrange )
 		}
 
 		### write breaks and deltas into GRanges
 		if (length(deltaWs) > 0) {
-			deltas.all.chroms[[chr]] <- suppressWarnings( deltaWs[,'deltaW'] )  #select only deltaW metadata column to store
+			suppressWarnings( deltas.all.chroms[[chr]] <- deltaWs[,'deltaW'] )  #select only deltaW metadata column to store
 		}
 		if (length(newBreaks) > 0) {
-			breaks.all.chroms[[chr]] <- suppressWarnings( newBreaks )
+			suppressWarnings( breaks.all.chroms[[chr]] <- newBreaks )
 		}
 		
 	}
@@ -163,28 +157,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 	## save set parameters for future reference
 	parameters <- c(windowsize=windowsize, scaleWindowSize=scaleWindowSize, trim=trim, peakTh=peakTh, zlim=zlim, bg=bg, minReads=minReads)
 
-	### Write to BED ###
-	if (writeBed==T) {
-		## WRITE ALL THE DATA INTO A SINGLE BED FILE:
-		message("Writing BED files")
-		destination <- file.path(dataDirectory, filename)
-		if (!file.exists(destination)) {
-			dir.create(destination)
-		}
-  		writeBedFile(fileName=filename, dataDirectory=destination, fragments=fragments, deltaWs=deltas.all.chroms, breakTrack=breaks.all.chroms, bin=reads.per.window)
-	}
-
-	### Write to RData ###
-	data.obj <- list(deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters)
-	data.store <- file.path(dataDirectory, 'PLOT')
-
-	if (!file.exists(data.store)) {
-		dir.create(data.store)
-	}
-
-	destination <- file.path(data.store, paste0(filename, '.RData'))
-	save(data.obj, file=destination)
-
+	data.obj <- list(fragments=fragments, deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters)
 	return(data.obj)
 }
 
