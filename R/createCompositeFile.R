@@ -29,7 +29,7 @@ createCompositeFile <- function(file.list, chromosomes=NULL, pairedEndReads=TRUE
 
 	composite.bam.grl <- GenomicRanges::GRangesList()
 	for (bamfile in file.list) {
-		#message("Working on file ",bamfile)
+		message("Working on file ",bamfile)
 		fragments <- suppressWarnings( bam2GRanges(bamfile, pairedEndReads=pairedEndReads, chromosomes=chromosomes, min.mapq=min.mapq, keep.duplicate.reads=keep.duplicate.reads) )
 	        if (length(fragments) > 0) { mcols(fragments)$lib <- bamfile } # appends file name to reads
 		composite.bam <- GenomicRanges::GRangesList()
