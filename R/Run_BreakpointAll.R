@@ -32,9 +32,9 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 		dir.create(dataDirectory)
 	}
 
-	#deltas.all.files <- GenomicRanges::GRangesList()
-	#breaks.all.files <- GenomicRanges::GRangesList()
-	#counts.all.files <- GenomicRanges::GRangesList()
+	deltas.all.files <- GenomicRanges::GRangesList()
+	breaks.all.files <- GenomicRanges::GRangesList()
+	counts.all.files <- GenomicRanges::GRangesList()
 
 	if (createCompositeFile) {
 		fragments <- createCompositeFile(file.list=files, chromosomes=chromosomes, pairedEndReads=pairedEndReads, WC.cutoff=WC.cutoff)
@@ -79,7 +79,11 @@ runBreakpointrALL <- function(datapath=NULL, dataDirectory='BreakPointR_analysis
 			#}
 		}
 	}
-	#return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters))
+	
+	if (createCompositeFile) {
+		return(list(deltas=deltas.all.files, breaks=breaks.all.files, counts=counts.all.files, params=parameters))
+	}
+	
 	options(warn=0) # turns warnings back on 
 }
 
