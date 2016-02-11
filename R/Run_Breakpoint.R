@@ -45,6 +45,9 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 		dw <- deltaWCalculator(fragments, reads.per.window=reads.per.window)
 	}
 	
+	reads.all.chroms <- GenomicRanges::GRangesList()
+	reads.all.chroms <- fragments
+
 	deltas.all.chroms <- GenomicRanges::GRangesList()
 	breaks.all.chroms <- GenomicRanges::GRangesList()
 	counts.all.chroms <- GenomicRanges::GRangesList()
@@ -153,9 +156,11 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 		
 	}
 	## creating list of list where filename is first level list ID and deltas, breaks and counts are second list IDs
+	reads.all.chroms <- unlist(reads.all.chroms)	
 	deltas.all.chroms <- unlist(deltas.all.chroms)
 	breaks.all.chroms <- unlist(breaks.all.chroms)
 	counts.all.chroms <- unlist(counts.all.chroms)
+	names(reads.all.chroms) <- NULL
 	names(deltas.all.chroms) <- NULL
 	names(breaks.all.chroms) <- NULL
 	names(counts.all.chroms) <- NULL
@@ -175,7 +180,7 @@ runBreakpointr <- function(input.data, dataDirectory='./BreakPointR_analysis', p
 	}
 
 	### Write to RData ###
-	data.obj <- list(deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters)
+	data.obj <- list(reads=reads.all.chroms, deltas=deltas.all.chroms, breaks=breaks.all.chroms, counts=counts.all.chroms, params=parameters)
 	data.store <- file.path(dataDirectory, 'PLOT')
 
 	if (!file.exists(data.store)) {
