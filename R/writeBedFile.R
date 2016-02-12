@@ -10,7 +10,7 @@
 #' @author Ashley Sanders, David Porubsky, Aaron Taudt
 #' @export
 
-writeBedFile <- function(fileName, dataDirectory, fragments=NULL, deltaWs=NULL, breakTrack=NULL, bin=NA) {
+writeBedFile <- function(fileName, dataDirectory, fragments=NULL, deltaWs=NULL, breakTrack=NULL, bin=NA, col="103,139,139 243,165,97") {
 	
 	## Insert chromosome for in case it's missing
 	insertchr <- function(gr) {
@@ -27,7 +27,7 @@ writeBedFile <- function(fileName, dataDirectory, fragments=NULL, deltaWs=NULL, 
 		fragments <- insertchr(fragments)
 		savefile.reads <- file.path(dataDirectory, paste0('AllChr_', basename(fileName), '_reads.bed.gz'))
 		savefile.reads.gz <- gzfile(savefile.reads, 'w')
-		head_reads <- paste('track name=', index, '_reads visibility=1 colorByStrand="103,139,139 243,165,97"', sep="")
+		head_reads <- paste0('track name=', index, '_reads visibility=1 colorByStrand="', col, '"') 
 		write.table(head_reads, file=savefile.reads.gz, row.names=FALSE, col.names=F, quote=FALSE, append=F, sep='\t')   
 		if (length(fragments)>0) {
 			bedfile <- as.data.frame(fragments)[c('chromosome','start','end', 'mapq', 'strand')]
