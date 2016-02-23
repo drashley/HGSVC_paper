@@ -32,7 +32,7 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 	    CCpVal<- fisher.test(matrix(c(cReads, wReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
 	    WCpVal<-fisher.test(matrix(c(cReads, wReads, round(roiReads*0.5), round(roiReads*0.5)), ncol=2, byrow=T))[[1]]
 	    WWpVal<- fisher.test(matrix(c(wReads, cReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
-            
+            iter <- 1
             while(CCpVal == WCpVal & WCpVal == WWpVal){ #if pVals are equal, take 10% of reads and recalculate
 	            iter <- iter + 1
 	            cReads <-cReads*0.1
