@@ -20,7 +20,7 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 	breaks <- keepSeqlevels(breaks, value=as.character(unique(seqnames(breaks))))
 
   # function that genotypes a position based on number of + and - reads -> by Ashley Sanders
-  genotype <- function(cReads, wReads, roiReads, bg=backG, minR=minReads)
+  genotype <- function(cReads, wReads, roiReads, bg=backG, minR=minReads, maxiter=10)
   {  ## FISHER EXACT TEST
 		if (length(roiReads)==0) {
 			return(c(NA,NA))
@@ -32,7 +32,18 @@ GenotypeBreaks<- function(breaks, fragments, backG=0.02, minReads=10)
 	    CCpVal<- fisher.test(matrix(c(cReads, wReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
 	    WCpVal<-fisher.test(matrix(c(cReads, wReads, round(roiReads*0.5), round(roiReads*0.5)), ncol=2, byrow=T))[[1]]
 	    WWpVal<- fisher.test(matrix(c(wReads, cReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
-    
+            
+            while(CCpVal == WCpVal & WCpVal == WWpVal){ #if pVals are equal, take 10% of reads and recalculate
+	            iter <- iter + 1
+	            cReads <-cReads*0.1
+	            wReads <- wReads*0.1
+	            roiReads <-roiReads*0.1
+	              CCpVal<- fisher.test(matrix(c(cReads, wReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
+	              WCpVal<-fisher.test(matrix(c(cReads, wReads, round(roiReads*0.5), round(roiReads*0.5)), ncol=2, byrow=T))[[1]]
+	              WWpVal<- fisher.test(matrix(c(wReads, cReads, round(roiReads*(1-bg)), round(roiReads*bg)), ncol=2, byrow=T))[[1]]
+	              if (iter == maxiter) { break }
+	         }
+	         
 	    pVal<- cbind(CCpVal, WCpVal, WWpVal)
 	    maxP<- max(pVal)
 	    #if (pVal[which(pVal != maxP)][1] < 0.05 & pVal[which(pVal != maxP)][2] < 0.05) { signf <- '*'} else {signf <- 'ns'}
