@@ -8,7 +8,7 @@
 #' 4. write a file of _reads, _deltaWs and _breaks in a chr fold -> can upload on to UCSC Genome browser
 #' 5. write a file for each index with all chromosomes included -> can upload on to UCSC Genome browser
 #'
-#' @param bamfile A file with aligned reads in BAM format.
+#' @param input.data A file with aligned reads in BAM format.
 #' @param dataDirectory Output directory. If non-existent it will be created.
 #' @param pairedEndReads Set to \code{TRUE} if you have paired-end reads in your file.
 #' @param chromosomes If only a subset of the chromosomes should be processed, specify them here.
